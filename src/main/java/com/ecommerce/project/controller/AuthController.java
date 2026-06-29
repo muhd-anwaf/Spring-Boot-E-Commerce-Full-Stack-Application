@@ -11,12 +11,7 @@ import com.ecommerce.project.security.request.SignupRequest;
 import com.ecommerce.project.security.response.MessageResponse;
 import com.ecommerce.project.security.response.UserInfoResponse;
 import com.ecommerce.project.security.services.UserDetailsImpl;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import jakarta.validation.Valid;
-import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,15 +21,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -57,51 +47,35 @@ public class AuthController {
     @Autowired
     PasswordEncoder encoder;
 
-//    @PostMapping("/signin")
-//    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest){
-//        Authentication authentication;
-//        authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-//                loginRequest.getUsername(),loginRequest.getPassword()
-//        ));
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-//        UserDetailsImpl userDetails =(UserDetailsImpl) authentication.getPrincipal();
-////        String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
-//        String test = jwtUtils.test();
-//        List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-//        String  jwt1 = Jwts.builder()
-//                .subject(userDetails.getUsername())
-//                .issuedAt(new Date())
-//                .expiration(new Date(System.currentTimeMillis() + 30000000))
-//                .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode("mySuperSdsfgdfgsdfgfdgsdgfdsfgfdsagadhgnhahheargdgfdsafddasecretKeyForJwtAuthentication123456")))
-//                .compact();
-//
-//
-//        return ResponseEntity.ok(jwt1);
-//    }
-
     @PostMapping("/signin")
-    public  ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         Authentication authentication;
         try {
             authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken
-                            (loginRequest.getUsername(), loginRequest.getPassword()));
+                    .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
         } catch (AuthenticationException exception) {
             Map<String, Object> map = new HashMap<>();
             map.put("message", "Bad credentials");
             map.put("status", false);
             return new ResponseEntity<Object>(map, HttpStatus.NOT_FOUND);
         }
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+                .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
+
         UserInfoResponse response = new UserInfoResponse(userDetails.getId(),
-                userDetails.getUsername(), roles);
+                userDetails.getUsername(), roles, jwtCookie.toString());
+
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
-                jwtCookie.toString()).body(response);
+                jwtCookie.toString())
+                .body(response);
     }
 
     @PostMapping("/signup")
@@ -155,9 +129,34 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 
+    @GetMapping("/username")
+    public String currentUserName(Authentication authentication){
+        if (authentication != null)
+            return authentication.getName();
+        else
+            return "";
+    }
+
+
+    @GetMapping("/user")
+    public ResponseEntity<?> getUserDetails(Authentication authentication){
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(item -> item.getAuthority())
+                .collect(Collectors.toList());
+
+        UserInfoResponse response = new UserInfoResponse(userDetails.getId(),
+                userDetails.getUsername(), roles);
+
+        return ResponseEntity.ok().body(response);
+    }
+
     @PostMapping("/signout")
     public ResponseEntity<?> signoutUser(){
         ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,cookie.toString()).body(new MessageResponse("Logged Out"));
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
+                        cookie.toString())
+                .body(new MessageResponse("You've been signed out!"));
     }
 }

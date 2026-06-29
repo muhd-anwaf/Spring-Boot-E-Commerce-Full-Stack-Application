@@ -42,9 +42,8 @@ public class Address {
     private String country;
 
     @NotBlank
-    @Size(min = 6, message = "Pincode must be atleast 6 characters")
+    @Size(min = 5, message = "Pincode must be atleast 5 characters")
     private String pincode;
-
 
     @ManyToOne
     @JoinColumn(name = "user_id")

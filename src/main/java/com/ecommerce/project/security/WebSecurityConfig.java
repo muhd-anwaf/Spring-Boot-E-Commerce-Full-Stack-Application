@@ -34,7 +34,7 @@ import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+//@EnableMethodSecurity
 public class WebSecurityConfig {
     @Autowired
     UserDetailsServiceImpl userDetailsService;

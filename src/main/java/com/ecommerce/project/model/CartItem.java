@@ -4,11 +4,10 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
 
 @Entity
-@Table(name = "cart_items")
 @Data
+@Table(name = "cart_items")
 @NoArgsConstructor
 @AllArgsConstructor
 public class CartItem {
