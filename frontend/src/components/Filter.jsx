@@ -13,34 +13,49 @@ import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import { useSearchParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCategories } from "../store/actions";
 
-const categories = [
-  { categoryId: 1, categoryName: "Electronics" },
-  { categoryId: 2, categoryName: "Clothing" },
-  { categoryId: 3, categoryName: "Books" },
-  { categoryId: 4, categoryName: "Home & Kitchen" },
-  { categoryId: 5, categoryName: "Sports & Outdoors" },
-];
-
+// Search, category and price-sort controls. All state lives in the URL query string.
 const Filter = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const dispatch = useDispatch();
+  const categories = useSelector((state) => state.products.categories);
 
-  const [category, setCategory] = useState("all");
-  const [sortOrder, setSortOrder] = useState("asc");
-  const [searchTerm, setSearchTerm] = useState("");
+  const category = searchParams.get("category") || "all";
+  const sortOrder = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
+  // Only the text box needs its own state, so typing is not debounced away
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("keyword") || "");
 
   useEffect(() => {
-    const currentCategory = searchParams.get("category") || "all";
-    const currentSortOrder = searchParams.get("sortOrder") || "asc";
-    const currentSearchTerm = searchParams.get("keyword") || "";
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-    setCategory(currentCategory);
-    setSortOrder(currentSortOrder);
-    setSearchTerm(currentSearchTerm);
-  }, [searchParams]);
+  // Debounce: write the keyword to the URL half a second after typing stops
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const nextParams = new URLSearchParams(searchParams);
+      const trimmedValue = searchTerm.trim();
+      const keywordChanged = (nextParams.get("keyword") ?? "") !== trimmedValue;
 
+      if (trimmedValue) {
+        nextParams.set("keyword", trimmedValue);
+      } else {
+        nextParams.delete("keyword");
+      }
+      if (keywordChanged) {
+        nextParams.delete("page");
+        setSearchParams(nextParams);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchParams, searchTerm, setSearchParams]);
+
+  // Any filter change goes back to page 1
   const updateSearchParams = (updates) => {
     const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("page");
 
     Object.entries(updates).forEach(([key, value]) => {
       if (value === "" || value === null || value === undefined) {
@@ -55,56 +70,19 @@ const Filter = () => {
 
   const handleCategoryChange = (event) => {
     const selectedCategory = event.target.value;
-    setCategory(selectedCategory);
+    updateSearchParams({ category: selectedCategory === "all" ? "" : selectedCategory });
+  };
 
-    if (selectedCategory === "all") {
-      updateSearchParams({ category: "" });
-      return;
-    }
-
-    updateSearchParams({ category: selectedCategory });
+  const toggleSortOrder = () => {
+    updateSearchParams({ sortOrder: sortOrder === "asc" ? "desc" : "" });
   };
 
   const handleClearFilters = () => {
-
-
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete("category");
-    nextParams.delete("keyword");
-    nextParams.delete("sortOrder");
-    setSearchParams(nextParams);
     setSearchTerm("");
-    setCategory("all");
-    setSortOrder("asc");
+    setSearchParams(new URLSearchParams());
   };
 
-  const isFiltered =
-    searchTerm !== "" || category !== "all" || sortOrder !== "asc";
-
-  const toggleSortOrder = () => {
-    const newOrder = sortOrder === "asc" ? "desc" : "asc";
-    setSortOrder(newOrder);
-    updateSearchParams({ sortOrder: newOrder });
-  };
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const nextParams = new URLSearchParams(searchParams);
-      const trimmedValue = searchTerm.trim();
-
-      if (trimmedValue) {
-        nextParams.set("keyword", trimmedValue);
-      } else {
-        nextParams.delete("keyword");
-      }
-
-      if (nextParams.toString() !== searchParams.toString()) {
-        setSearchParams(nextParams);
-      }
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [searchParams, searchTerm, setSearchParams]);
+  const isFiltered = searchTerm !== "" || category !== "all" || sortOrder !== "asc";
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center">
@@ -114,12 +92,15 @@ const Filter = () => {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full md:max-w-sm"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          htmlInput: { "aria-label": "Search products" },
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          },
         }}
       />
 
@@ -128,7 +109,7 @@ const Filter = () => {
           <InputLabel id="category-select-label">Category</InputLabel>
           <Select
             labelId="category-select-label"
-            value={category}
+            value={categories.some((item) => item.categoryName === category) || category === "all" ? category : "all"}
             label="Category"
             onChange={handleCategoryChange}
           >
@@ -141,9 +122,9 @@ const Filter = () => {
           </Select>
         </FormControl>
 
-        <Tooltip title="Sort products">
+        <Tooltip title={sortOrder === "asc" ? "Price: low to high" : "Price: high to low"}>
           <Button onClick={toggleSortOrder} variant="outlined">
-            Sort By
+            Price
             <SortIcon className={`ml-1 ${sortOrder === "desc" ? "rotate-180" : ""}`} />
           </Button>
         </Tooltip>

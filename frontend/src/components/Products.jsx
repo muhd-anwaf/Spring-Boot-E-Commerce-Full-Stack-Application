@@ -1,83 +1,63 @@
-
-import { CgAirplane } from "react-icons/cg";
-import ProductCard from "./ProductCard";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
-import { fetchProducts } from "../store/actions";
+import { useSearchParams } from "react-router-dom";
 import Filter from "./Filter";
+import ProductCard from "./ProductCard";
+import PagePagination from "./ui/PagePagination";
+import Spinner from "./ui/Spinner";
+import ErrorMessage from "./ui/ErrorMessage";
+import EmptyState from "./ui/EmptyState";
 import useProductFilter from "./useProductFilter";
+import { fetchProducts } from "../store/actions";
 
-const Products = () =>{
+const Products = () => {
+  const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { isLoading, errorMessage } = useSelector((state) => state.errors);
+  const { products, pagination } = useSelector((state) => state.products);
 
-  const { isLoading , errorMessage } = useSelector(
-      (state) => state.errors);
+  useProductFilter();
 
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
 
+  const goToPage = (value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === 1) next.delete("page");
+    else next.set("page", String(value));
+    setSearchParams(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
+  const retry = () => dispatch(fetchProducts(searchParams.toString()));
 
-    const {products} = useSelector(
-      (state) => state.products
-    )
-    
+  return (
+    <div className="rounded-xl bg-amber-500 px-4 py-8 sm:px-8">
+      <Filter />
 
-    const dispatch = useDispatch(); 
-    
-    useProductFilter();
-
-    
-
-    // useEffect (()=>{
-    //   dispatch(fetchProducts());
-    // },[dispatch])
-
-
-    
-    
-
-return (
-  <div className="px-4 py-14 sm:px-8 lg:px-14 2xl:mx-auto 2xl:w-[90%] bg-amber-500">
-    <Filter />
-    
-    {isLoading ? ( <p>It is loading...</p> )
-                : errorMessage ? (
-                                    <div className="  h-50 ">
-                                      <CgAirplane className="text-8xl text-red-600 mb-4"/>
-                                      <span className="text-1xl text-slate-500 mt-4">
-                                        <strong className="text-black">404. </strong> That's an error.
-                                      </span>
-                                      <p className="mt-4">The Request has an error : <strong>{errorMessage}</strong></p>
-                                    </div> 
-                                  )
-                              : (
-      <div className="min-h-175  ">
-        <div className="grid gap-x-6 gap-y-6 pb-6 pt-14 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {products?.map(({
-            productId,
-            productName,
-            image,
-            description,
-            quantity,
-            price,
-            discount,
-            specialPrice,
-          }) => (
-            <ProductCard
-              key={productId}
-              productId={productId}
-              productName={productName}
-              image={image}
-              description={description}
-              quantity={quantity}
-              price={price}
-              discount={discount}
-              specialPrice={specialPrice}
-            />
-          ))}
+      {isLoading ? (
+        <Spinner label="Loading products..." />
+      ) : errorMessage ? (
+        <div className="mt-8">
+          <ErrorMessage message={errorMessage} onRetry={retry} />
         </div>
-      </div>
-    )}
-  </div>
-);
-}
+      ) : !products || products.length === 0 ? (
+        <div className="mt-8">
+          <EmptyState
+            title="No products found"
+            message="Try a different search or clear the filters."
+          />
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-x-6 gap-y-6 pb-2 pt-8 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product.productId} {...product} />
+            ))}
+          </div>
+          <PagePagination page={page} totalPages={pagination?.totalPages} onChange={goToPage} />
+        </>
+      )}
+    </div>
+  );
+};
 
 export default Products;
