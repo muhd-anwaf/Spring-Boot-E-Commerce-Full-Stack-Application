@@ -1,0 +1,22 @@
+{
+  "name": "e-shop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E-Shop: full-stack e-commerce app (Spring Boot API + React storefront). Convenience scripts for the whole repo.",
+  "license": "MIT",
+  "scripts": {
+    "install:all": "npm --prefix frontend install",
+    "db:up": "docker compose --env-file backend/.env up -d db",
+    "db:down": "docker compose --env-file backend/.env down",
+    "dev:backend": "cd backend && mvn spring-boot:run",
+    "dev:backend:h2": "cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=h2",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && mvn -DskipTests package",
+    "build:frontend": "npm --prefix frontend run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && mvn test",
+    "test:frontend": "npm --prefix frontend test",
+    "lint": "npm --prefix frontend run lint"
+  }
+}
