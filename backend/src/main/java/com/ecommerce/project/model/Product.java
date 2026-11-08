@@ -24,12 +24,12 @@ public class Product {
     private Long productId;
 
     @NotBlank
-    @Size(min = 3, message = "Product name must contain atleast 3 characters")
+    @Size(min = 3, max = 120, message = "Product name must be 3 to 120 characters")
     private String productName;
     private String image;
 
     @NotBlank
-    @Size(min = 6, message = "Product description must contain atleast 6 characters")
+    @Size(min = 6, max = 255, message = "Description must be 6 to 255 characters")
     private String description;
     private Integer quantity;
     private double price;

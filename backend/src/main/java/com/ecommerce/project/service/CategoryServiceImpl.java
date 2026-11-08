@@ -13,11 +13,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Set;
 
 @Service
-public class CategoryServiceImpl implements CategoryService{
+public class CategoryServiceImpl implements CategoryService {
+
+    private static final Set<String> SORTABLE_FIELDS = Set.of("categoryId", "categoryName");
 
     @Autowired
     private CategoryRepository categoryRepository;
@@ -26,59 +29,64 @@ public class CategoryServiceImpl implements CategoryService{
     private ModelMapper modelMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
-        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
-        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        if (pageNumber == null || pageNumber < 0 || pageSize == null || pageSize < 1 || pageSize > 100) {
+            throw new APIException("pageNumber must be 0 or greater and pageSize between 1 and 100");
+        }
+        if (!SORTABLE_FIELDS.contains(sortBy)) {
+            throw new APIException("Cannot sort categories by '" + sortBy + "'");
+        }
+        Sort sort = "desc".equalsIgnoreCase(sortOrder) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sort);
         Page<Category> categoryPage = categoryRepository.findAll(pageDetails);
 
-        List<Category> categories = categoryPage.getContent();
-        if (categories.isEmpty())
-            throw new APIException("No category created till now.");
-
-        List<CategoryDTO> categoryDTOS = categories.stream()
-                .map(category -> modelMapper.map(category, CategoryDTO.class))
-                .toList();
-
-        CategoryResponse categoryResponse = new CategoryResponse();
-        categoryResponse.setContent(categoryDTOS);
-        categoryResponse.setPageNumber(categoryPage.getNumber());
-        categoryResponse.setPageSize(categoryPage.getSize());
-        categoryResponse.setTotalElements(categoryPage.getTotalElements());
-        categoryResponse.setTotalPages(categoryPage.getTotalPages());
-        categoryResponse.setLastPage(categoryPage.isLast());
-        return categoryResponse;
+        CategoryResponse response = new CategoryResponse();
+        response.setContent(categoryPage.getContent().stream()
+                .map(category -> modelMapper.map(category, CategoryDTO.class)).toList());
+        response.setPageNumber(categoryPage.getNumber());
+        response.setPageSize(categoryPage.getSize());
+        response.setTotalElements(categoryPage.getTotalElements());
+        response.setTotalPages(categoryPage.getTotalPages());
+        response.setLastPage(categoryPage.isLast());
+        return response;
     }
 
     @Override
+    @Transactional
     public CategoryDTO createCategory(CategoryDTO categoryDTO) {
-        Category category = modelMapper.map(categoryDTO, Category.class);
-        Category categoryFromDb = categoryRepository.findByCategoryName(category.getCategoryName());
-        if (categoryFromDb != null)
-            throw new APIException("Category with the name " + category.getCategoryName() + " already exists !!!");
-        Category savedCategory = categoryRepository.save(category);
-        return modelMapper.map(savedCategory, CategoryDTO.class);
+        String name = categoryDTO.getCategoryName().trim();
+        if (categoryRepository.findByCategoryName(name) != null) {
+            throw new APIException("Category with the name " + name + " already exists");
+        }
+        Category category = new Category();
+        category.setCategoryName(name);
+        return modelMapper.map(categoryRepository.save(category), CategoryDTO.class);
     }
 
     @Override
+    @Transactional
     public CategoryDTO deleteCategory(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category","categoryId",categoryId));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
+        if (category.getProducts() != null && !category.getProducts().isEmpty()) {
+            throw new APIException("Category still has products. Move or delete them first.");
+        }
         categoryRepository.delete(category);
         return modelMapper.map(category, CategoryDTO.class);
     }
 
     @Override
+    @Transactional
     public CategoryDTO updateCategory(CategoryDTO categoryDTO, Long categoryId) {
-        Category savedCategory = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category","categoryId",categoryId));
-
-        Category category = modelMapper.map(categoryDTO, Category.class);
-        category.setCategoryId(categoryId);
-        savedCategory = categoryRepository.save(category);
-        return modelMapper.map(savedCategory, CategoryDTO.class);
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
+        String name = categoryDTO.getCategoryName().trim();
+        Category sameName = categoryRepository.findByCategoryName(name);
+        if (sameName != null && !sameName.getCategoryId().equals(categoryId)) {
+            throw new APIException("Category with the name " + name + " already exists");
+        }
+        category.setCategoryName(name);
+        return modelMapper.map(categoryRepository.save(category), CategoryDTO.class);
     }
 }
