@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Every address operation is limited to the logged-in user's own addresses. */
 @RestController
 @RequestMapping("/api")
 public class AddressController {
@@ -23,42 +24,29 @@ public class AddressController {
     AddressService addressService;
 
     @PostMapping("/addresses")
-    public ResponseEntity<AddressDTO> createAddress(@Valid @RequestBody AddressDTO addressDTO){
+    public ResponseEntity<AddressDTO> createAddress(@Valid @RequestBody AddressDTO addressDTO) {
         User user = authUtil.loggedInUser();
-        AddressDTO savedAddressDTO = addressService.createAddress(addressDTO, user);
-        return new ResponseEntity<>(savedAddressDTO, HttpStatus.CREATED);
+        return new ResponseEntity<>(addressService.createAddress(addressDTO, user), HttpStatus.CREATED);
     }
 
-    @GetMapping("/addresses")
-    public ResponseEntity<List<AddressDTO>> getAddresses(){
-        List<AddressDTO> addressList = addressService.getAddresses();
-        return new ResponseEntity<>(addressList, HttpStatus.OK);
+    /** Alias of /users/addresses: returns only the caller's addresses. */
+    @GetMapping({"/addresses", "/users/addresses"})
+    public ResponseEntity<List<AddressDTO>> getUserAddresses() {
+        return ResponseEntity.ok(addressService.getUserAddresses(authUtil.loggedInUser()));
     }
 
     @GetMapping("/addresses/{addressId}")
-    public ResponseEntity<AddressDTO> getAddressById(@PathVariable Long addressId){
-        AddressDTO addressDTO = addressService.getAddressesById(addressId);
-        return new ResponseEntity<>(addressDTO, HttpStatus.OK);
-    }
-
-
-    @GetMapping("/users/addresses")
-    public ResponseEntity<List<AddressDTO>> getUserAddresses(){
-        User user = authUtil.loggedInUser();
-        List<AddressDTO> addressList = addressService.getUserAddresses(user);
-        return new ResponseEntity<>(addressList, HttpStatus.OK);
+    public ResponseEntity<AddressDTO> getAddressById(@PathVariable Long addressId) {
+        return ResponseEntity.ok(addressService.getAddressesById(addressId));
     }
 
     @PutMapping("/addresses/{addressId}")
-    public ResponseEntity<AddressDTO> updateAddress(@PathVariable Long addressId
-            , @RequestBody AddressDTO addressDTO){
-        AddressDTO updatedAddress = addressService.updateAddress(addressId, addressDTO);
-        return new ResponseEntity<>(updatedAddress, HttpStatus.OK);
+    public ResponseEntity<AddressDTO> updateAddress(@PathVariable Long addressId, @Valid @RequestBody AddressDTO addressDTO) {
+        return ResponseEntity.ok(addressService.updateAddress(addressId, addressDTO));
     }
 
     @DeleteMapping("/addresses/{addressId}")
-    public ResponseEntity<String> updateAddress(@PathVariable Long addressId){
-        String status = addressService.deleteAddress(addressId);
-        return new ResponseEntity<>(status, HttpStatus.OK);
+    public ResponseEntity<String> deleteAddress(@PathVariable Long addressId) {
+        return ResponseEntity.ok(addressService.deleteAddress(addressId));
     }
 }

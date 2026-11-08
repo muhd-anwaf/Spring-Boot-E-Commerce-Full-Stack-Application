@@ -8,11 +8,10 @@ import java.util.List;
 public interface AddressService {
     AddressDTO createAddress(AddressDTO addressDTO, User user);
 
-    List<AddressDTO> getAddresses();
-
-    AddressDTO getAddressesById(Long addressId);
-
     List<AddressDTO> getUserAddresses(User user);
+
+    /** Only returns the address if it belongs to the logged-in user. */
+    AddressDTO getAddressesById(Long addressId);
 
     AddressDTO updateAddress(Long addressId, AddressDTO addressDTO);
 
