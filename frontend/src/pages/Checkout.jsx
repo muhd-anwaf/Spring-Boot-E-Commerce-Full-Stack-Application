@@ -47,6 +47,7 @@ export default function Checkout() {
     await reload();
     setSelected(address.addressId);
     setAdding(false);
+    setMessage("");
     toast.success("Address saved");
   };
 
