@@ -14,9 +14,13 @@ import java.util.List;
 @Entity
 @Table(name = "addresses")
 @Data
+@lombok.EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@lombok.ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Address {
+    @lombok.EqualsAndHashCode.Include
+    @lombok.ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long addressId;

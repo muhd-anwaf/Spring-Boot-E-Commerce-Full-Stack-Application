@@ -10,10 +10,14 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "payments")
 @Data
+@lombok.EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@lombok.ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
 
+    @lombok.EqualsAndHashCode.Include
+    @lombok.ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentId;

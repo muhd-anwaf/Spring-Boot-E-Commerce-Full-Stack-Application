@@ -10,10 +10,14 @@ import java.util.List;
 
 @Entity
 @Data
+@lombok.EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@lombok.ToString(onlyExplicitlyIncluded = true)
 @Table(name = "carts")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cart {
+    @lombok.EqualsAndHashCode.Include
+    @lombok.ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long cartId;

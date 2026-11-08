@@ -13,10 +13,14 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 @Data
+@lombok.EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@lombok.ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Order {
 
+    @lombok.EqualsAndHashCode.Include
+    @lombok.ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderId;

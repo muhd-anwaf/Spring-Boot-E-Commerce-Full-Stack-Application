@@ -13,12 +13,15 @@ import java.util.List;
 
 @Entity
 @Data
+@lombok.EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@lombok.ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "products")
-@ToString
 public class Product {
 
+    @lombok.EqualsAndHashCode.Include
+    @lombok.ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long productId;
@@ -44,6 +47,8 @@ public class Product {
     @JoinColumn(name = "seller_id")
     private User user;
 
-    @OneToMany(mappedBy = "product", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+    // Inverse side only. No cascade (it re-persisted deleted cart items) and LAZY (EAGER caused N+1 queries).
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @lombok.ToString.Exclude
     private List<CartItem> products = new ArrayList<>();
 }

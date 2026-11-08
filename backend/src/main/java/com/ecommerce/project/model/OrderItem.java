@@ -7,11 +7,15 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@lombok.EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@lombok.ToString(onlyExplicitlyIncluded = true)
 @Table(name = "order_items")
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderItem {
 
+    @lombok.EqualsAndHashCode.Include
+    @lombok.ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderItemId;

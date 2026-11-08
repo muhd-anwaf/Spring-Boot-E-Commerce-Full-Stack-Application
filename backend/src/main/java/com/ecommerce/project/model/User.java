@@ -13,6 +13,8 @@ import java.util.Set;
 
 @Entity
 @Data
+@lombok.EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@lombok.ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @Table(name = "users",
         uniqueConstraints = {
@@ -20,6 +22,8 @@ import java.util.Set;
         @UniqueConstraint(columnNames = "email")
         })
 public class User {
+    @lombok.EqualsAndHashCode.Include
+    @lombok.ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
