@@ -14,30 +14,23 @@ public class AuthUtil {
     @Autowired
     UserRepository userRepository;
 
-    public String loggedInEmail(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + authentication.getName()));
-
-        return user.getEmail();
+    public String loggedInEmail() {
+        return loggedInUser().getEmail();
     }
 
-    public Long loggedInUserId(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + authentication.getName()));
-
-        return user.getUserId();
+    public Long loggedInUserId() {
+        return loggedInUser().getUserId();
     }
 
-    public User loggedInUser(){
+    public boolean isAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + authentication.getName()));
-        return user;
-
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
-
+    public User loggedInUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return userRepository.findByUserName(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + authentication.getName()));
+    }
 }
