@@ -1,13 +1,27 @@
 package com.ecommerce.project.payload;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
+/** Standard envelope for error and message responses: {message, status, errors?}. */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class APIResponse {
-    public String message;
+    private String message;
     private boolean status;
+    private Map<String, String> errors;
+
+    public APIResponse(String message, boolean status) {
+        this.message = message;
+        this.status = status;
+    }
+
+    public APIResponse(String message, boolean status, Map<String, String> errors) {
+        this(message, status);
+        this.errors = errors;
+    }
 }

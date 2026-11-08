@@ -1,32 +1,23 @@
 package com.ecommerce.project.security.request;
 
-import java.util.Set;
-
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+/** Self-service signup. Roles cannot be chosen by the caller; new accounts always get ROLE_USER. */
 @Data
 public class SignupRequest {
     @NotBlank
-    @Size(min = 3, max = 20)
+    @Size(min = 3, max = 20, message = "Username must be 3 to 20 characters")
     private String username;
 
     @NotBlank
     @Size(max = 50)
-    @Email
+    @Email(message = "Enter a valid email address")
     private String email;
 
-    private Set<String> role;
-
     @NotBlank
-    @Size(min = 6, max = 40)
+    @Size(min = 8, max = 40, message = "Password must be 8 to 40 characters")
     private String password;
-
-    public Set<String> getRole() {
-        return this.role;
-    }
-
-    public void setRole(Set<String> role) {
-        this.role = role;
-    }
 }

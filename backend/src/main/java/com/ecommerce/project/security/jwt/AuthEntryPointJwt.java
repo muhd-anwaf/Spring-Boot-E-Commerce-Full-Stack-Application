@@ -12,7 +12,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
@@ -20,23 +20,19 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthEntryPointJwt.class);
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
             throws IOException, ServletException {
-        logger.error("Unauthorized error: {}", authException.getMessage());
+        logger.debug("Unauthorized request to {}: {}", request.getServletPath(), authException.getMessage());
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        final Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpServletResponse.SC_UNAUTHORIZED);
-        body.put("error", "Unauthorized");
-        body.put("message", authException.getMessage());
-        body.put("path", request.getServletPath());
-
-        final ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("message", "Authentication is required to access this resource");
+        body.put("status", false);
         mapper.writeValue(response.getOutputStream(), body);
     }
-
 }
-
